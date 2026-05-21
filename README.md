@@ -135,7 +135,7 @@ pnpm reset:macos-default-explorer
 - Editable path bar on top
 - File/folder tree in center (hidden files shown)
 - Copy / Paste / Move to Trash
-- Drag and drop move inside app
+- Drag and drop move inside app, built with [Adam-Fresko/react-drag-and-drop](https://github.com/Adam-Fresko/react-drag-and-drop)
 - Keyboard shortcuts:
   - Cmd+C
   - Cmd+V
