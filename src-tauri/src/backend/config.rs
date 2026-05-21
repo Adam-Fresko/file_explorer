@@ -61,8 +61,22 @@ pub fn save_config(config: &AppConfigDto) -> Result<(), String> {
     fs::write(path, raw).map_err(|err| format!("Failed to write config: {err}"))
 }
 
+fn expand_home_shorthand(path: &str) -> PathBuf {
+    if path == "~" {
+        return dirs::home_dir().unwrap_or_else(|| PathBuf::from(path));
+    }
+
+    if let Some(rest) = path.strip_prefix("~/") {
+        if let Some(home) = dirs::home_dir() {
+            return home.join(rest);
+        }
+    }
+
+    PathBuf::from(path)
+}
+
 pub fn normalize_directory(path: &str) -> Result<String, String> {
-    let path = Path::new(path);
+    let path = expand_home_shorthand(path);
     let canonical = fs::canonicalize(path).map_err(|err| format!("Invalid directory: {err}"))?;
 
     if !canonical.is_dir() {
@@ -81,6 +95,63 @@ mod tests {
             "adams_file_explorer_config_{name}_{}",
             std::process::id()
         ))
+    }
+
+    fn canonical_string(path: PathBuf) -> String {
+        fs::canonicalize(path)
+            .unwrap()
+            .to_string_lossy()
+            .to_string()
+    }
+
+    #[test]
+    fn normalize_directory_expands_home_shorthand() {
+        let home = dirs::home_dir().unwrap();
+
+        assert_eq!(normalize_directory("~").unwrap(), canonical_string(home));
+    }
+
+    #[test]
+    fn normalize_directory_expands_home_shorthand_with_separator() {
+        let home = dirs::home_dir().unwrap();
+
+        assert_eq!(normalize_directory("~/").unwrap(), canonical_string(home));
+    }
+
+    #[test]
+    fn normalize_directory_keeps_absolute_paths() {
+        let dir = test_dir("absolute_path");
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+
+        assert_eq!(
+            normalize_directory(dir.to_str().unwrap()).unwrap(),
+            canonical_string(dir.clone())
+        );
+
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn normalize_directory_rejects_missing_home_child() {
+        let path = format!(
+            "~/adams_file_explorer_missing_home_child_{}",
+            std::process::id()
+        );
+
+        assert!(normalize_directory(&path).is_err());
+    }
+
+    #[test]
+    fn normalize_directory_does_not_expand_other_user_shorthand() {
+        assert_eq!(
+            expand_home_shorthand("~otheruser"),
+            PathBuf::from("~otheruser")
+        );
+        assert_eq!(
+            expand_home_shorthand("~otheruser/Documents"),
+            PathBuf::from("~otheruser/Documents")
+        );
     }
 
     #[test]

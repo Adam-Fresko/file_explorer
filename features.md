@@ -19,6 +19,22 @@
 
 ## File Tree
 
+### Path Bar Navigation
+- Summary: Users can type a folder path in the path bar and open it directly.
+- Solves: Lets users jump to known folders without clicking through the tree.
+- Requirements:
+  - Submitting the path input opens the matching folder and refreshes the tree.
+  - After a folder opens, the path input shows the full normalized folder path.
+  - The path input supports current-user home shorthand with `~` and `~/folder`.
+  - Invalid paths keep the app in the current folder and show the normal path error.
+  - UI logs record the typed path, and backend command results record the opened folder path.
+- Status: done
+- Links/Paths:
+  - `ui/src/components/PathBar.tsx`
+  - `ui/src/store/useExplorerStore.ts`
+  - `src-tauri/src/commands.rs`
+  - `src-tauri/src/backend/config.rs`
+
 ### Rename Files And Folders
 - Summary: Users can rename one file or folder from the tree with a dialog opened by the row context menu or `Shift+F6`.
 - Solves: Makes basic file management possible without leaving the app or using Finder.
